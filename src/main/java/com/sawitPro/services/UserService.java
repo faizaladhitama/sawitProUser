@@ -1,32 +1,35 @@
 package com.sawitPro.services;
 
+import com.sawitPro.helpers.JwtUtil;
 import com.sawitPro.models.User;
 import com.sawitPro.repository.UserRepository;
+import com.sawitPro.viewModels.Login;
 import com.sawitPro.viewModels.Registration;
+import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.spec.InvalidKeySpecException;
 import java.util.stream.IntStream;
 
 @Service
 public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
-    public UserService(PasswordEncoder passwordEncoder, UserRepository userRepository){
+    private final JwtUtil jwtUtil;
+
+    public UserService(PasswordEncoder passwordEncoder, UserRepository userRepository, JwtUtil jwtUtil){
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
+        this.jwtUtil = jwtUtil;
     }
 
+    @Transactional
     public Boolean registration(Registration registration){
         String phoneNumber = registration.getPhoneNumber();
         String name = registration.getName();
         String password = registration.getPassword();
-        boolean validation = phoneNumberValidation(phoneNumber) || nameValidation(name) || passwordValidation(password);
+        boolean validation = phoneNumberValidation(phoneNumber) && nameValidation(name) && passwordValidation(password);
         if(!validation){
             return false;
         }
@@ -40,6 +43,25 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(password));
         userRepository.save(user);
         return true;
+    }
+
+    public String login(Login login){
+        String phoneNumber = login.getPhoneNumber();
+        String password = login.getPassword();
+        boolean validation = phoneNumberValidation(phoneNumber) && passwordValidation(password);
+        if(!validation){
+            return null;
+        }
+        User user = userRepository.findUserByPhoneNumber(phoneNumber);
+        if(user == null){
+            return null;
+        }
+        String hashedPassword = user.getPassword();
+        boolean passwordValid = passwordEncoder.matches(password, hashedPassword);
+        if(!passwordValid){
+            return null;
+        }
+        return jwtUtil.generateToken(user);
     }
 
     private boolean phoneNumberValidation(String phoneNumber){
@@ -66,10 +88,9 @@ public class UserService {
         if (password.length() < 6 || password.length() > 16){
             return false;
         }
-        IntStream passwordChars = password.chars();
-        if(passwordChars.noneMatch(Character::isUpperCase)){
+        if(password.chars().noneMatch(Character::isUpperCase)){
             return false;
         }
-        return passwordChars.anyMatch(Character::isDigit);
+        return password.chars().anyMatch(Character::isDigit);
     }
 }

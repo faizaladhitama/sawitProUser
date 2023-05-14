@@ -3,6 +3,7 @@ package com.sawitPro.controllers;
 import com.sawitPro.models.User;
 import com.sawitPro.repository.UserRepository;
 import com.sawitPro.services.UserService;
+import com.sawitPro.viewModels.Login;
 import com.sawitPro.viewModels.Registration;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,5 +21,10 @@ public class UserController {
     @PostMapping("/registration")
     public Boolean registration(@RequestBody Registration registration){
        return userService.registration(registration);
+    }
+
+    @PostMapping("/login")
+    public String login(@RequestBody Login login){
+        return userService.login(login);
     }
 }
