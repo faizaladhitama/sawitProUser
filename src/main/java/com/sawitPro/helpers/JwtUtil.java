@@ -14,7 +14,10 @@ import java.io.Serializable;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -49,8 +52,16 @@ public class JwtUtil implements Serializable {
     }
 
     private Claims getAllClaimsFromToken(String token) {
-        byte[] keyBytes = Decoders.BASE64.decode(publicKey);
-        return Jwts.parserBuilder().setSigningKey(keyBytes).build().parseClaimsJws(token).getBody();
+        try {
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(publicKey));
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            PublicKey pubKey = kf.generatePublic(keySpec);
+            return Jwts.parserBuilder().setSigningKey(pubKey).build().parseClaimsJws(token).getBody();
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
     }
 
     private Boolean isTokenExpired(String token) {
@@ -78,8 +89,17 @@ public class JwtUtil implements Serializable {
         }
     }
 
-    public Boolean validateToken(String token, User user) {
-        final String phoneNumber = getPhoneNumberFromToken(token);
-        return (phoneNumber.equals(user.getPhoneNumber()) && !isTokenExpired(token));
+    public Boolean validateAuthorizationHeader(String authorizationHeader) {
+        String token = getTokenFromAuthorizationHeader(authorizationHeader);
+        return !isTokenExpired(token);
     }
+
+    public String getTokenFromAuthorizationHeader(String authorizationHeader){
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer")) {
+            return authorizationHeader.substring(7);
+        }
+        return null;
+    }
+
+
 }

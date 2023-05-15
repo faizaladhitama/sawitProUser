@@ -5,6 +5,7 @@ import com.sawitPro.models.User;
 import com.sawitPro.repository.UserRepository;
 import com.sawitPro.viewModels.Login;
 import com.sawitPro.viewModels.Registration;
+import com.sawitPro.viewModels.UpdateName;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -62,6 +63,34 @@ public class UserService {
             return null;
         }
         return jwtUtil.generateToken(user);
+    }
+
+    public String getName(String authorizationHeader){
+        boolean validate = jwtUtil.validateAuthorizationHeader(authorizationHeader);
+        if(!validate){
+            return null;
+        }
+        String token = jwtUtil.getTokenFromAuthorizationHeader(authorizationHeader);
+        String jwtPhoneNumber = jwtUtil.getPhoneNumberFromToken(token);
+        User user = userRepository.findUserByPhoneNumber(jwtPhoneNumber);
+        return user == null ? null : user.getName();
+    }
+
+    public Boolean updateName(String authorizationHeader, UpdateName updateName){
+        boolean validate = jwtUtil.validateAuthorizationHeader(authorizationHeader);
+        if(!validate){
+            return false;
+        }
+        String name = updateName.getName();
+        if(!nameValidation(name)){
+            return false;
+        }
+        String token = jwtUtil.getTokenFromAuthorizationHeader(authorizationHeader);
+        String jwtPhoneNumber = jwtUtil.getPhoneNumberFromToken(token);
+        User user = userRepository.findUserByPhoneNumber(jwtPhoneNumber);
+        user.setName(updateName.getName());
+        userRepository.save(user);
+        return true;
     }
 
     private boolean phoneNumberValidation(String phoneNumber){
