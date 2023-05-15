@@ -6,6 +6,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+@Slf4j
 @Component
 public class JwtUtil implements Serializable {
 
@@ -95,7 +98,7 @@ public class JwtUtil implements Serializable {
     }
 
     public String getTokenFromAuthorizationHeader(String authorizationHeader){
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer")) {
+        if (!StringUtils.isBlank(authorizationHeader) && authorizationHeader.startsWith("Bearer")) {
             return authorizationHeader.substring(7);
         }
         return null;

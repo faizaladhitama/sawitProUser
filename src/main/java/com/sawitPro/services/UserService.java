@@ -1,5 +1,6 @@
 package com.sawitPro.services;
 
+import com.sawitPro.controllers.UserController;
 import com.sawitPro.helpers.JwtUtil;
 import com.sawitPro.models.User;
 import com.sawitPro.repository.UserRepository;
@@ -7,12 +8,16 @@ import com.sawitPro.viewModels.Login;
 import com.sawitPro.viewModels.Registration;
 import com.sawitPro.viewModels.UpdateName;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.stream.IntStream;
 
+@Slf4j
 @Service
 public class UserService {
     private final PasswordEncoder passwordEncoder;
@@ -51,15 +56,18 @@ public class UserService {
         String password = login.getPassword();
         boolean validation = phoneNumberValidation(phoneNumber) && passwordValidation(password);
         if(!validation){
+            log.info("invalid");
             return null;
         }
         User user = userRepository.findUserByPhoneNumber(phoneNumber);
         if(user == null){
+            log.info("invalid 2");
             return null;
         }
         String hashedPassword = user.getPassword();
         boolean passwordValid = passwordEncoder.matches(password, hashedPassword);
         if(!passwordValid){
+            log.info("invalid 3");
             return null;
         }
         return jwtUtil.generateToken(user);
