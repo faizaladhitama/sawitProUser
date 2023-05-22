@@ -56,18 +56,15 @@ public class UserService {
         String password = login.getPassword();
         boolean validation = phoneNumberValidation(phoneNumber) && passwordValidation(password);
         if(!validation){
-            log.info("invalid");
             return null;
         }
         User user = userRepository.findUserByPhoneNumber(phoneNumber);
         if(user == null){
-            log.info("invalid 2");
             return null;
         }
         String hashedPassword = user.getPassword();
         boolean passwordValid = passwordEncoder.matches(password, hashedPassword);
         if(!passwordValid){
-            log.info("invalid 3");
             return null;
         }
         return jwtUtil.generateToken(user);
